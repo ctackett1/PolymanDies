@@ -1,0 +1,1048 @@
+//##############################Three things coming in program#############
+//SandT2.cpp :Define the entry point for the console apllication
+
+#include<windows.h>
+#include<GL/glut.h>
+#include<stdlib.h>
+#include<math.h>
+#include<conio.h>
+#include<stdio.h>
+#include<iostream>
+#include<iomanip>
+
+#include<gl/glut.h>
+using namespace std;
+
+//*************************************************************GLOBAL VALUES*******************************************************
+/*These values are global because the timing call back functions will only take certain parameters hence their needs to be global variable to communicate with these functions*/
+
+float theta = 50.0; //global angular value for rotation
+float scale1 = 1.0; //global scaling value
+float dx = 7.0, dy = -3.0;
+
+float thetaPolyman = 0.0, polymanDX = 7.0, polymanDY = -3.0; //global values for polyman
+float thetaPolywoman = 0.0, polywomanDX = -8.0, polywomanDY = -3.0; //global values for polywoman
+float thetaSquareman = 0.0, squaremanDX = -10.0, squaremanDY = -3.0; //global values for squareman
+
+int frame = 1;
+
+void init(void); //thi i a function to initialize the window clear color
+void RenderScene(void); //makes the scene
+void loadicon(float[], float[], float[], float[], float[], float[]);
+
+/*loads polyman*/
+void drawPolyman(float[], float[]); /*draws icon*/
+void setTransformPolywoman(void);/*Sets the rotation/translation matrix the MODELVIEW MATRIX for polywoman*/
+void setTransformPolyman(void); /*sets the rotation/translation matrix the MODELVIE MATRIX for polyman*/
+
+void setTransformSquareman(void); /*sets the rotation/translation matrix the MODELVIE MATRIX for squareman*/
+
+void drawPolywoman(float[], float[]);
+
+
+void drawSquareman(float[], float[]);
+
+
+void SetupRC(void); //sets up the clear color
+void TimerFunction(int); //has the different frames of the movie
+
+//is the animation paused? used to freeze the animation when spacebar
+// is pressed
+bool paused = false;
+void Keys(unsigned char, int, int);
+
+//MAIN PROGRAM
+
+int main(int argc, char** argv) {
+	//set up the window title
+
+	char header[] = "Polyman Dies by Cecilia Tackett";
+		/*glutInit() initializes GLUT. Takes the command line arguments which are used to initialize the native window system. This function must be called before any other GLUT functions.*/
+	glutInit(&argc, argv);
+	//Set up the display mode with a single buffer and RGB colors
+	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
+	//initialize window size and position
+	glutInitWindowSize(560, 440);
+	glutInitWindowPosition(140, 20);
+	//Initialize background color in window to red
+	SetupRC();
+	//Open and Label Window
+	glutCreateWindow(header);
+	glutDisplayFunc(RenderScene);
+	glutKeyboardFunc(Keys);
+
+	glutTimerFunc(30, TimerFunction, 1);
+	//Now draw the scene
+	glShadeModel(GL_FLAT);
+
+	glutMainLoop();
+
+	return 0;
+
+}
+
+//***************************RenderScene Function**************************************
+void RenderScene(void) {
+	float xdel = 0.25;
+	float polymanPX[100], polymanPY[100]; /*These variables hold the pattern for polyman*/
+
+	float polywomanPX[100], polywomanPY[100]; /*these variable hold the pattern for polywoman*/
+
+	float squaremanX[100], squaremanY[100];/*these variables hold the pattern for squareman*/
+	//clear the window with the current background color
+
+	cout << "in renderscene" << endl;
+
+	//set the current drawing color to white
+
+	glColor3f(1.0, 1.0, 1.0);
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	//set the viewport to the window dimensions
+	glViewport(0, 0, 540, 440);
+	//establish the clipping volume in user coordinates
+	glOrtho(-7.0, 7.0, -7.0, 7.0, 1.0, -1.0);
+	loadicon(polymanPX, polymanPY, polywomanPX, polywomanPY, squaremanX, squaremanY);
+	/*draw the icon untransformed*/
+
+
+	//clear the window with the background color
+	glClear(GL_COLOR_BUFFER_BIT);
+	//set the current drawing color to white
+	//set the current drawing color to white
+	glColor3f(1.0, 1.0, 1.0);
+	//Now set the MODELVIEW MATRIX for polywoman
+	setTransformPolywoman();
+	//draw polywoman
+	drawPolywoman(polywomanPX, polywomanPY);
+	glFlush();
+
+	//Set modelview matrix for polyman
+	setTransformPolyman();
+	//draw polyman
+	drawPolyman(polymanPX, polymanPY);
+	glFlush();
+
+	//model view matrix for squareman
+	setTransformSquareman();
+	//draw squareman
+	drawSquareman(squaremanX, squaremanY);
+	glFlush();
+
+	glEnd();
+
+	glutSwapBuffers();
+
+	return;
+
+}; //end of renderScene
+
+/*****************************LOAD ICON***************************/
+
+void loadicon(float polymanPX[], float polymanPY[], float polywomanPX[], float polywomanPY[], float squaremanX[], float squaremanY[]) {
+	/*this procedure loads polyman, polywoman, and squareman*/
+
+	/*set the coordinates of the polyman*/
+	//top half of polymans body
+	polymanPX[0] = -1.0;			polymanPY[0] = 0.0;//far left point
+	polymanPX[1] = -0.50;			polymanPY[1] = 0.50;//top left point
+	polymanPX[2] = 0.50;			polymanPY[2] = 0.50;//top right point
+	polymanPX[3] = 1.0;				polymanPY[3] = 0.0;//far right point
+	//bottom half of polymans body
+	polymanPX[4] = 1.0;				polymanPY[4] = 0.0;//far right point
+	polymanPX[5] = 0.50;			polymanPY[5] = -0.50;//bottom right point
+	polymanPX[6] = -0.50;			polymanPY[6] = -0.50;//bottom left point
+	polymanPX[7] = -1.0;			polymanPY[7] = 0.0;//far left point
+	   
+	//eye
+	polymanPX[8] = -0.50;			polymanPY[8] = 0.25;//top left point
+	polymanPX[9] = -0.40;			polymanPY[9] = 0.25;//top right point
+	polymanPX[10] = -0.40;			polymanPY[10] = 0.125;//bottom right point
+	polymanPX[11] = -0.50;			polymanPY[11] = 0.125;//bottom left point
+
+	//left leg
+	polymanPX[12] = -0.25;			polymanPY[12] = -0.25; //start point
+	polymanPX[13] = -0.25;			polymanPY[13] = -1.00;//leg point
+	polymanPX[14] = -0.40;			polymanPY[14] = -1.00;//foot point
+
+	//right leg
+	polymanPX[15] = 0.25;			polymanPY[15] = -0.25;//start point
+	polymanPX[16] = 0.25;			polymanPY[16] = -1.00;//leg point
+	polymanPX[17] = 0.125;			polymanPY[17] = -1.00;//foot point
+	//mouth	
+	polymanPX[18] = -0.50;			polymanPY[18] = -0.125;//top of mouth
+	polymanPX[19] = -0.75;			polymanPY[19] = -0.25;//bottom of mouth
+
+	//right leg angled
+	polymanPX[20] = 0.25;			polymanPY[20] = -0.25;//start point
+	polymanPX[21] = 0.50;			polymanPY[21] = -0.75;//leg point
+	polymanPX[22] = 0.45;			polymanPY[22] = -1.00;//foot point
+	//left leg angled
+	polymanPX[23] = -0.25;			polymanPY[23] = -0.25;//start point
+	polymanPX[24] = -0.50;			polymanPY[24] = -0.75;//leg point
+	polymanPX[25] = -0.75;			polymanPY[25] = -.55;//foot point
+
+
+
+
+	/*load polywoman*/
+	//upper body
+	polywomanPX[0] = 1.00;			polywomanPY[0] = 0.00;//far right point
+	polywomanPX[1] = 0.50;			polywomanPY[1] = 0.50;//top right point
+	polywomanPX[2] = -0.50;			polywomanPY[2] = 0.50;//top left point
+	polywomanPX[3] = -1.00;			polywomanPY[3] = 0.00;//far left point
+
+	//lower body
+	polywomanPX[4] = 1.0;			polywomanPY[4] = 0.0; //far right point
+	polywomanPX[5] = 0.50;			polywomanPY[5] = -0.50;//bottom right point
+	polywomanPX[6] = -0.50;			polywomanPY[6] = -0.50;//bottom left point
+	polywomanPX[7] = -1.0;			polywomanPY[7] = 0.0;//far left point
+
+
+	//eye
+	polywomanPX[8] = 0.50;			polywomanPY[8] = 0.25;
+	polywomanPX[9] = 0.40;			polywomanPY[9] = 0.25;
+	polywomanPX[10] = 0.40;			polywomanPY[10] = 0.125;
+	polywomanPX[11] = 0.50;			polywomanPY[11] = 0.125;
+	//left leg
+	polywomanPX[12] = -0.25;		polywomanPY[12] = -0.25;
+	polywomanPX[13] = -0.25;		polywomanPY[13] = -1.00;
+	polywomanPX[14] = -0.125;		polywomanPY[14] = -1.00;
+	//right leg
+	polywomanPX[15] = 0.25;			polywomanPY[15] = -0.25;
+	polywomanPX[16] = 0.25;			polywomanPY[16] = -1.0;
+	polywomanPX[17] = 0.40;			polywomanPY[17] = -1.0;
+	//mouth
+	polywomanPX[18] = 0.50;			polywomanPY[18] = -0.125;
+	polywomanPX[19] = 0.75;			polywomanPY[19] = -0.25;
+
+	//corn rows
+	//row 1
+	polywomanPX[20] = 0.12;			polywomanPY[20] = 0.50;//top left point
+	polywomanPX[21] = 0.17;			polywomanPY[21] = 0.50;//top right point
+	polywomanPX[22] = 0.17;			polywomanPY[22] = 0.125;//bottom right point
+	polywomanPX[23] = 0.12;			polywomanPY[23] = 0.125;//botton left point
+
+	//bow 1
+	polywomanPX[24] = 0.00;			polywomanPY[24] = 0.25;//top left point
+	polywomanPX[25] = 0.00;			polywomanPY[25] = 0.05;//bottom right point
+	polywomanPX[26] = 0.15;			polywomanPY[26] = 0.15;//center point
+	polywomanPX[27] = 0.30;			polywomanPY[27] = 0.25;//top right point
+	polywomanPX[28] = 0.30;			polywomanPY[28] = 0.05;//bottom right point
+
+
+	//row 2
+	polywomanPX[29] = -0.10;		polywomanPY[29] = 0.50;//top left point
+	polywomanPX[30] = -0.05;		polywomanPY[30] = 0.50;//top right point
+	polywomanPX[31] = -0.05;		polywomanPY[31] = 0.125;//bottom right point
+	polywomanPX[32] = -0.10;		polywomanPY[32] = 0.125;//botton left point
+
+	//bow 2
+	polywomanPX[33] = -0.22;		polywomanPY[33] = 0.25;//top left point
+	polywomanPX[34] = -0.22;		polywomanPY[34] = 0.05;//bottom right point
+	polywomanPX[35] = -0.03;		polywomanPY[35] = 0.15;//center point point
+	polywomanPX[36] = 0.08;			polywomanPY[36] = 0.25;//top right point
+	polywomanPX[37] = 0.08;			polywomanPY[37] = 0.05;//bottom right point
+
+	//row 3
+	polywomanPX[38] = -0.32;		polywomanPY[38] = 0.50;//top left point
+	polywomanPX[39] = -0.27;		polywomanPY[39] = 0.50;//top right point
+	polywomanPX[40] = -0.27;		polywomanPY[40] = 0.125;//bottom right point
+	polywomanPX[41] = -0.32;		polywomanPY[41] = 0.125;//botton left point
+
+	//bow 3
+	polywomanPX[42] = -0.44;		polywomanPY[42] = 0.25;//top left point
+	polywomanPX[43] = -0.44;		polywomanPY[43] = 0.05;//bottom right point
+	polywomanPX[44] = -0.13;		polywomanPY[44] = 0.15;//center point
+	polywomanPX[45] = 0.08;			polywomanPY[45] = 0.25;//top right point
+	polywomanPX[46] = 0.08;			polywomanPY[46] = 0.05;//bottom right point
+
+	//left leg angled
+	polywomanPX[47] = -0.25;		polywomanPY[47] = -0.25;
+	polywomanPX[48] = -0.50;		polywomanPY[48] = -0.75;
+	polywomanPX[49] = -0.35;		polywomanPY[49] = -1.00;
+	//right leg angled
+	polywomanPX[50] = 0.25;			polywomanPY[50] = -0.25;
+	polywomanPX[51] = 0.50;			polywomanPY[51] = -0.75;
+	polywomanPX[52] = 0.75;			polywomanPY[52] = -0.50;
+
+
+
+	/*load squareman*/
+	squaremanX[0] = -1.0;			squaremanY[0] = 0.0;//far left point
+	squaremanX[1] = 0.0;			squaremanY[1] = 1.0;//far top point
+	squaremanX[2] = 1.0;			squaremanY[2] = 0.0;//far right point
+	squaremanX[3] = 0.0;			squaremanY[3] = -1.0;//far bottom point
+
+	//legs
+	//right leg
+	squaremanX[4] = -0.50;			squaremanY[4] = -0.125; //top point of leg
+	squaremanX[5] = -0.50;			squaremanY[5] = -1.25; // bottom point of leg
+	squaremanX[6] = -0.25;			squaremanY[6] = -1.25; //end of foot
+	//left leg
+	squaremanX[7] = 0.50;			squaremanY[7] = -0.125;//top point of leg
+	squaremanX[8] = 0.50;			squaremanY[8] = -1.25;//bottom point of leg
+	squaremanX[9] = 0.75;			squaremanY[9] = -1.25;//end of foot
+	//eyes
+	//right eye
+	squaremanX[10] = 0.25;			squaremanY[10] = 0.35;//top point of eye
+	squaremanX[11] = 0.25;			squaremanY[11] = 0.10;//bottom part of eye
+	squaremanX[12] = 0.55;			squaremanY[12] = 0.17;//far right point of eye
+	//left eye
+	squaremanX[13] = 0.25;			squaremanY[13] = 0.25;//top point of leg
+	squaremanX[14] = 0.25;			squaremanY[14] = 0.20;//bottom point of leg
+	squaremanX[15] = 0.25;			squaremanY[15] = 0.15;//far right point of eye
+	//mouth
+
+	squaremanX[16] = 0.25;	  		squaremanY[16] = -0.20;//left point start
+	squaremanX[17] = 0.60;  		squaremanY[17] = -0.25;//bottom right end
+	//sword
+	//handle
+	squaremanX[18] = 0.50;			squaremanY[18] = 0.0;//top left point
+	squaremanX[19] = 0.50;			squaremanY[19] = -0.125;//bottom left point
+	squaremanX[20] = 0.75;			squaremanY[20] = -0.125;//bottom right point
+	squaremanX[21] = 0.75;			squaremanY[21] = 0.0;//top right point
+	//handle top
+	squaremanX[22] = 0.75;			squaremanY[22] = 0.25;//top left point
+	squaremanX[23] = 1.0;			squaremanY[23] = 0.25;//top right point
+	squaremanX[24] = 1.0;			squaremanY[24] = -0.40;//bottom right point
+	squaremanX[25] = 0.75;			squaremanY[25] = -0.40;//bottom left point
+	//sword blade
+	squaremanX[26] = 1.0;			squaremanY[26] = 0.15;//top left point
+	squaremanX[27] = 1.0;			squaremanY[27] = -0.30;//bottom left point
+	squaremanX[28] = 2.5;			squaremanY[28] = -0.30;//bottom right point
+	squaremanX[29] = 2.75;			squaremanY[29] = 0.15;//topright point of blade
+	//sword shine
+	squaremanX[30] = 1.25;	  		squaremanY[30] = -0.07;//left point
+	squaremanX[31] = 2.53;  		squaremanY[31] = -0.07;//top right point
+
+	//right leg angled
+	squaremanX[32] = -0.50;			squaremanY[32] = -0.125; //top point of leg
+	squaremanX[33] = -0.75;			squaremanY[33] = -1.00; // bottom point of leg
+	squaremanX[34] = -0.50;			squaremanY[34] = -1.25; //end of foot
+	//left leg angled
+	squaremanX[35] = 0.50;			squaremanY[35] = -0.125;//top point of leg
+	squaremanX[36] = 0.75;			squaremanY[36] = -1.00;//bottom point of leg
+	squaremanX[37] = 0.90;			squaremanY[37] = -0.75;//end of foot
+
+
+
+	return;
+} /* end of load icon */
+
+/****************************Function drawicon****************************/
+
+void drawPolyman(float polymanPXP[], float polymanPYP[]) {
+	/*this function draws the square icon at the transformed position. The model view matrix previously set before we enter this function will draw the
+	square with the transformations*/
+
+	int i = polymanDX;
+	cout << "in drawicon" << endl;
+	 if (i % 2) {
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polymanPXP[20], polymanPYP[20]);
+		glVertex2f(polymanPXP[21], polymanPYP[21]);
+		glVertex2f(polymanPXP[22], polymanPYP[22]);
+		glEnd();
+		glColor3f(0.0, 1.0, 1.0);
+		// upper body
+		glBegin(GL_POLYGON);
+		glVertex2f(polymanPXP[0], polymanPYP[0]);
+		glVertex2f(polymanPXP[1], polymanPYP[1]);
+		glVertex2f(polymanPXP[2], polymanPYP[2]);
+		glVertex2f(polymanPXP[3], polymanPYP[3]);
+		glEnd();
+
+		//lower body
+		glBegin(GL_POLYGON);
+		glVertex2f(polymanPXP[4], polymanPYP[4]);
+		glVertex2f(polymanPXP[5], polymanPYP[5]);
+		glVertex2f(polymanPXP[6], polymanPYP[6]);
+		glVertex2f(polymanPXP[7], polymanPYP[7]);
+		glEnd();
+
+		//eye
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polymanPXP[8], polymanPYP[8]);
+		glVertex2f(polymanPXP[9], polymanPYP[9]);
+		glVertex2f(polymanPXP[10], polymanPYP[10]);
+		glVertex2f(polymanPXP[11], polymanPYP[11]);
+		glEnd();
+
+		//mouth
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polymanPXP[18], polymanPYP[18]);
+		glVertex2f(polymanPXP[19], polymanPYP[19]);
+		glEnd();
+		//left leg
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polymanPXP[23], polymanPYP[23]);
+		glVertex2f(polymanPXP[24], polymanPYP[24]);
+		glVertex2f(polymanPXP[25], polymanPYP[25]);
+		glEnd();
+
+	}
+	else {
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polymanPXP[15], polymanPYP[15]);
+		glVertex2f(polymanPXP[16], polymanPYP[16]);
+		glVertex2f(polymanPXP[17], polymanPYP[17]);
+		glEnd();
+		glColor3f(0.0, 1.0, 1.0);
+		// upper body
+		glBegin(GL_POLYGON);
+		glVertex2f(polymanPXP[0], polymanPYP[0]);
+		glVertex2f(polymanPXP[1], polymanPYP[1]);
+		glVertex2f(polymanPXP[2], polymanPYP[2]);
+		glVertex2f(polymanPXP[3], polymanPYP[3]);
+		glEnd();
+
+		//lower body
+		glBegin(GL_POLYGON);
+		glVertex2f(polymanPXP[4], polymanPYP[4]);
+		glVertex2f(polymanPXP[5], polymanPYP[5]);
+		glVertex2f(polymanPXP[6], polymanPYP[6]);
+		glVertex2f(polymanPXP[7], polymanPYP[7]);
+		glEnd();
+
+		//eye
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polymanPXP[8], polymanPYP[8]);
+		glVertex2f(polymanPXP[9], polymanPYP[9]);
+		glVertex2f(polymanPXP[10], polymanPYP[10]);
+		glVertex2f(polymanPXP[11], polymanPYP[11]);
+		glEnd();
+
+		//mouth
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polymanPXP[18], polymanPYP[18]);
+		glVertex2f(polymanPXP[19], polymanPYP[19]);
+		glEnd();
+		//left leg
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polymanPXP[12], polymanPYP[12]);
+		glVertex2f(polymanPXP[13], polymanPYP[13]);
+		glVertex2f(polymanPXP[14], polymanPYP[14]);
+		glEnd();
+
+	}
+
+	
+	
+
+	glFlush();
+
+	return;
+
+}//end of drawicon
+
+
+/***************************************function drawicon*************/
+void drawPolywoman(float polywomanPX[], float polywomanPY[]) {
+
+	int i = polywomanDX;
+	cout << "in drawicon" << endl;
+	
+	if (i % 2) {
+		//left leg
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polywomanPX[47], polywomanPY[47]);
+		glVertex2f(polywomanPX[48], polywomanPY[48]);
+		glVertex2f(polywomanPX[49], polywomanPY[49]);
+		glEnd();
+
+
+		//body
+		glColor3f(1.0, 0.0, 1.0);
+		// upper body
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[0], polywomanPY[0]);
+		glVertex2f(polywomanPX[1], polywomanPY[1]);
+		glVertex2f(polywomanPX[2], polywomanPY[2]);
+		glVertex2f(polywomanPX[3], polywomanPY[3]);
+		glEnd();
+
+		//lower body
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[4], polywomanPY[4]);
+		glVertex2f(polywomanPX[5], polywomanPY[5]);
+		glVertex2f(polywomanPX[6], polywomanPY[6]);
+		glVertex2f(polywomanPX[7], polywomanPY[7]);
+		glEnd();
+
+		//eye
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[8], polywomanPY[8]);
+		glVertex2f(polywomanPX[9], polywomanPY[9]);
+		glVertex2f(polywomanPX[10], polywomanPY[10]);
+		glVertex2f(polywomanPX[11], polywomanPY[11]);
+		glEnd();
+
+		//right leg
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polywomanPX[50], polywomanPY[50]);
+		glVertex2f(polywomanPX[51], polywomanPY[51]);
+		glVertex2f(polywomanPX[52], polywomanPY[52]);
+		glEnd();
+
+		//mouth
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polywomanPX[18], polywomanPY[18]);
+		glVertex2f(polywomanPX[19], polywomanPY[19]);
+		glEnd();
+
+		glColor3f(0.0, 0.0, 0.0);
+		//corn row 1
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[20], polywomanPY[20]);
+		glVertex2f(polywomanPX[21], polywomanPY[21]);
+		glVertex2f(polywomanPX[22], polywomanPY[22]);
+		glVertex2f(polywomanPX[23], polywomanPY[23]);
+		glEnd();
+		//left ide of bow
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[24], polywomanPY[24]);
+		glVertex2f(polywomanPX[25], polywomanPY[25]);
+		glVertex2f(polywomanPX[26], polywomanPY[26]);
+		glEnd();
+		//right side of bow
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[27], polywomanPY[27]);
+		glVertex2f(polywomanPX[28], polywomanPY[28]);
+		glVertex2f(polywomanPX[26], polywomanPY[26]);
+		glEnd();
+
+		glColor3f(0.0, 0.0, 0.0);
+		//corn row 2
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[29], polywomanPY[29]);
+		glVertex2f(polywomanPX[30], polywomanPY[30]);
+		glVertex2f(polywomanPX[31], polywomanPY[31]);
+		glVertex2f(polywomanPX[32], polywomanPY[32]);
+		glEnd();
+		//left ide of bow
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[33], polywomanPY[33]);
+		glVertex2f(polywomanPX[34], polywomanPY[34]);
+		glVertex2f(polywomanPX[35], polywomanPY[35]);
+		glEnd();
+		//right side of bow
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[36], polywomanPY[36]);
+		glVertex2f(polywomanPX[37], polywomanPY[37]);
+		glVertex2f(polywomanPX[35], polywomanPY[35]);
+		glEnd();
+
+
+		glColor3f(0.0, 0.0, 0.0);
+		//corn row 3
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[38], polywomanPY[38]);
+		glVertex2f(polywomanPX[39], polywomanPY[39]);
+		glVertex2f(polywomanPX[40], polywomanPY[40]);
+		glVertex2f(polywomanPX[41], polywomanPY[41]);
+		glEnd();
+		//left ide of bow
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[42], polywomanPY[42]);
+		glVertex2f(polywomanPX[43], polywomanPY[43]);
+		glVertex2f(polywomanPX[44], polywomanPY[44]);
+		glEnd();
+		//right side of bow
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[45], polywomanPY[45]);
+		glVertex2f(polywomanPX[46], polywomanPY[46]);
+		glVertex2f(polywomanPX[44], polywomanPY[44]);
+		glEnd();
+
+	}
+	else {
+		//left leg
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polywomanPX[12], polywomanPY[12]);
+		glVertex2f(polywomanPX[13], polywomanPY[13]);
+		glVertex2f(polywomanPX[14], polywomanPY[14]);
+		glEnd();
+
+
+		//body
+		glColor3f(1.0, 0.0, 1.0);
+		// upper body
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[0], polywomanPY[0]);
+		glVertex2f(polywomanPX[1], polywomanPY[1]);
+		glVertex2f(polywomanPX[2], polywomanPY[2]);
+		glVertex2f(polywomanPX[3], polywomanPY[3]);
+		glEnd();
+
+		//lower body
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[4], polywomanPY[4]);
+		glVertex2f(polywomanPX[5], polywomanPY[5]);
+		glVertex2f(polywomanPX[6], polywomanPY[6]);
+		glVertex2f(polywomanPX[7], polywomanPY[7]);
+		glEnd();
+
+		//eye
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[8], polywomanPY[8]);
+		glVertex2f(polywomanPX[9], polywomanPY[9]);
+		glVertex2f(polywomanPX[10], polywomanPY[10]);
+		glVertex2f(polywomanPX[11], polywomanPY[11]);
+		glEnd();
+
+		//right leg
+		glColor3f(0.0, 0.0, 1.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polywomanPX[15], polywomanPY[15]);
+		glVertex2f(polywomanPX[16], polywomanPY[16]);
+		glVertex2f(polywomanPX[17], polywomanPY[17]);
+		glEnd();
+
+		//mouth
+		glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(polywomanPX[18], polywomanPY[18]);
+		glVertex2f(polywomanPX[19], polywomanPY[19]);
+		glEnd();
+
+		glColor3f(0.0, 0.0, 0.0);
+		//corn row 1
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[20], polywomanPY[20]);
+		glVertex2f(polywomanPX[21], polywomanPY[21]);
+		glVertex2f(polywomanPX[22], polywomanPY[22]);
+		glVertex2f(polywomanPX[23], polywomanPY[23]);
+		glEnd();
+		//left ide of bow
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[24], polywomanPY[24]);
+		glVertex2f(polywomanPX[25], polywomanPY[25]);
+		glVertex2f(polywomanPX[26], polywomanPY[26]);
+		glEnd();
+		//right side of bow
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[27], polywomanPY[27]);
+		glVertex2f(polywomanPX[28], polywomanPY[28]);
+		glVertex2f(polywomanPX[26], polywomanPY[26]);
+		glEnd();
+
+		glColor3f(0.0, 0.0, 0.0);
+		//corn row 2
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[29], polywomanPY[29]);
+		glVertex2f(polywomanPX[30], polywomanPY[30]);
+		glVertex2f(polywomanPX[31], polywomanPY[31]);
+		glVertex2f(polywomanPX[32], polywomanPY[32]);
+		glEnd();
+		//left ide of bow
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[33], polywomanPY[33]);
+		glVertex2f(polywomanPX[34], polywomanPY[34]);
+		glVertex2f(polywomanPX[35], polywomanPY[35]);
+		glEnd();
+		//right side of bow
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[36], polywomanPY[36]);
+		glVertex2f(polywomanPX[37], polywomanPY[37]);
+		glVertex2f(polywomanPX[35], polywomanPY[35]);
+		glEnd();
+
+
+		glColor3f(0.0, 0.0, 0.0);
+		//corn row 3
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[38], polywomanPY[38]);
+		glVertex2f(polywomanPX[39], polywomanPY[39]);
+		glVertex2f(polywomanPX[40], polywomanPY[40]);
+		glVertex2f(polywomanPX[41], polywomanPY[41]);
+		glEnd();
+		//left ide of bow
+		glColor3f(1.0, 1.0, 1.0);
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[42], polywomanPY[42]);
+		glVertex2f(polywomanPX[43], polywomanPY[43]);
+		glVertex2f(polywomanPX[44], polywomanPY[44]);
+		glEnd();
+		//right side of bow
+		glBegin(GL_POLYGON);
+		glVertex2f(polywomanPX[45], polywomanPY[45]);
+		glVertex2f(polywomanPX[46], polywomanPY[46]);
+		glVertex2f(polywomanPX[44], polywomanPY[44]);
+		glEnd();
+
+	}
+	
+
+
+	glFlush();
+	return;
+}//end of drawPolywoman
+
+void drawSquareman(float squaremanPXP[], float squaremanPYP[]) {
+	/*this function draws the square icon at the transformed position. The model view matrix previously set before we enter this function will draw the
+	square with the transformations*/
+
+	glColor3f(1.0, 1.0, 0.0);
+	int i = squaremanDX;
+
+	if (i % 2) {
+		cout << "in drawicon" << endl;
+		//left eye
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[13], squaremanPYP[13]);
+		glVertex2f(squaremanPXP[14], squaremanPYP[14]);
+		glVertex2f(squaremanPXP[15], squaremanPYP[15]);
+		glEnd();
+		//left leg
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[35], squaremanPYP[35]);
+		glVertex2f(squaremanPXP[36], squaremanPYP[36]);
+		glVertex2f(squaremanPXP[37], squaremanPYP[37]);
+		glEnd();
+
+
+		glColor3f(1.0, 0.0, 0.0);
+		//body
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[0], squaremanPYP[0]);
+		glVertex2f(squaremanPXP[1], squaremanPYP[1]);
+		glVertex2f(squaremanPXP[2], squaremanPYP[2]);
+		glVertex2f(squaremanPXP[3], squaremanPYP[3]);
+		glEnd();
+
+		glColor3f(1.0, 1.0, 0.0);
+		//right leg
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[32], squaremanPYP[32]);
+		glVertex2f(squaremanPXP[33], squaremanPYP[33]);
+		glVertex2f(squaremanPXP[34], squaremanPYP[34]);
+		glEnd();
+
+		//right eye
+
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[10], squaremanPYP[10]);
+		glVertex2f(squaremanPXP[11], squaremanPYP[11]);
+		glVertex2f(squaremanPXP[12], squaremanPYP[12]);
+		glEnd();
+
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[16], squaremanPYP[16]);
+		glVertex2f(squaremanPXP[17], squaremanPYP[17]);
+		glEnd();
+
+		//sword
+
+		glColor3f(0.3, 0.2, 0.5);
+		//bottom handle
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[18], squaremanPYP[18]);
+		glVertex2f(squaremanPXP[19], squaremanPYP[19]);
+		glVertex2f(squaremanPXP[20], squaremanPYP[20]);
+		glVertex2f(squaremanPXP[21], squaremanPYP[21]);
+		glEnd();
+		//top handle
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[22], squaremanPYP[22]);
+		glVertex2f(squaremanPXP[23], squaremanPYP[23]);
+		glVertex2f(squaremanPXP[24], squaremanPYP[24]);
+		glVertex2f(squaremanPXP[25], squaremanPYP[25]);
+		glEnd();
+
+		glColor3f(0.8, 0.8, 0.8);
+		//blade
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[26], squaremanPYP[26]);
+		glVertex2f(squaremanPXP[27], squaremanPYP[27]);
+		glVertex2f(squaremanPXP[28], squaremanPYP[28]);
+		glVertex2f(squaremanPXP[29], squaremanPYP[29]);
+		glEnd();
+
+		glColor3f(1.0, 1.0, 1.0);
+		//shine of blade
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[30], squaremanPYP[30]);
+		glVertex2f(squaremanPXP[31], squaremanPYP[31]);
+		glEnd();
+
+
+	}
+	else {
+		cout << "in drawicon" << endl;
+		//left eye
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[13], squaremanPYP[13]);
+		glVertex2f(squaremanPXP[14], squaremanPYP[14]);
+		glVertex2f(squaremanPXP[15], squaremanPYP[15]);
+		glEnd();
+		//left leg
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[7], squaremanPYP[7]);
+		glVertex2f(squaremanPXP[8], squaremanPYP[8]);
+		glVertex2f(squaremanPXP[9], squaremanPYP[9]);
+		glEnd();
+
+
+		glColor3f(1.0, 0.0, 0.0);
+		//body
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[0], squaremanPYP[0]);
+		glVertex2f(squaremanPXP[1], squaremanPYP[1]);
+		glVertex2f(squaremanPXP[2], squaremanPYP[2]);
+		glVertex2f(squaremanPXP[3], squaremanPYP[3]);
+		glEnd();
+
+		glColor3f(1.0, 1.0, 0.0);
+		//right leg
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[4], squaremanPYP[4]);
+		glVertex2f(squaremanPXP[5], squaremanPYP[5]);
+		glVertex2f(squaremanPXP[6], squaremanPYP[6]);
+		glEnd();
+
+		//right eye
+
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[10], squaremanPYP[10]);
+		glVertex2f(squaremanPXP[11], squaremanPYP[11]);
+		glVertex2f(squaremanPXP[12], squaremanPYP[12]);
+		glEnd();
+
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[16], squaremanPYP[16]);
+		glVertex2f(squaremanPXP[17], squaremanPYP[17]);
+		glEnd();
+
+		//sword
+
+		glColor3f(0.3, 0.2, 0.5);
+		//bottom handle
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[18], squaremanPYP[18]);
+		glVertex2f(squaremanPXP[19], squaremanPYP[19]);
+		glVertex2f(squaremanPXP[20], squaremanPYP[20]);
+		glVertex2f(squaremanPXP[21], squaremanPYP[21]);
+		glEnd();
+		//top handle
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[22], squaremanPYP[22]);
+		glVertex2f(squaremanPXP[23], squaremanPYP[23]);
+		glVertex2f(squaremanPXP[24], squaremanPYP[24]);
+		glVertex2f(squaremanPXP[25], squaremanPYP[25]);
+		glEnd();
+
+		glColor3f(0.8, 0.8, 0.8);
+		//blade
+		glBegin(GL_POLYGON);
+		glVertex2f(squaremanPXP[26], squaremanPYP[26]);
+		glVertex2f(squaremanPXP[27], squaremanPYP[27]);
+		glVertex2f(squaremanPXP[28], squaremanPYP[28]);
+		glVertex2f(squaremanPXP[29], squaremanPYP[29]);
+		glEnd();
+
+		glColor3f(1.0, 1.0, 1.0);
+		//shine of blade
+		glBegin(GL_LINE_STRIP);
+		glVertex2f(squaremanPXP[30], squaremanPYP[30]);
+		glVertex2f(squaremanPXP[31], squaremanPYP[31]);
+		glEnd();
+
+
+	}
+
+	
+		glFlush();
+	return;
+
+}//end of drawicon
+
+/*****************************Function setTransformPolyman***********************/
+void setTransformPolyman(void) {
+	/*Sets the MODELVIEW MATRIX for the square. Note that the calls
+	are done backwards that is if we want to rotate and move the pattern, call
+	glTranslate first and then glRotate*/
+
+	cout << "in setTransformPolyman" << endl;
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(polymanDX, polymanDY, 0.0);
+	glRotatef(thetaPolyman, 0.0, 0.0, 1.0); //note that the angle theta is in degress, not radians
+
+	return;
+}
+
+/**********************Function setTransformPolywoman******************/
+
+void setTransformPolywoman(void) {
+	/*sets the MODELVIEW MATRIX for the Polywoman Note again that the calls are done backwars.
+	further note that we must have a MODELVIEW MATRIX for each figure*/
+
+	cout << "in setTransformPolywoman" << endl;
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(polywomanDX, polywomanDY, 0.0);
+	glRotatef(thetaPolywoman, 0.0, 0.0, 1.0); //note that the angle theta is in degrees, not radians
+
+	return;
+}
+
+void setTransformSquareman(void) {
+	/*sets the MODELVIEW MATRIX for squareman. Note again that the calls are done backwars.
+	further note that we must have a MODELVIEW MATRIX for each figure*/
+
+	cout << "in setTransformPolywoman" << endl;
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glTranslatef(squaremanDX, squaremanDY, 0.0);
+	glRotatef(thetaSquareman, 0.0, 0.0, 1.0); //note that the angle theta is in degrees, not radians
+
+	return;
+}
+
+
+/*****************************Function SetupRC****************/
+
+//Setup the rendering state
+
+void SetupRC(void) {
+	//this function sets the clear color of an open window and clears the open window
+	//set clear color to blue
+	glClearColor(0.0, 0.0, 1.0, 1.0);
+
+	return;
+} //end of setupRC
+
+/******************************TimerFunction**********************/
+
+void TimerFunction(int value) {
+	//if paused dont change any variables, just skip to redraw callback
+	if (!paused) {
+		//this call back function is call each 30 ms and changes the location, scale, and rotation of the characters
+		switch (frame) {
+		case 1: //polyman walks in
+			polymanDX -= 0.15;
+
+			if (polymanDX <= 0.0) {
+				polymanDX = 0.0;
+				frame = 2;
+			}
+			break;
+		case 2: //polywoman walks in
+			polywomanDX += 0.15;
+
+			if (polywomanDX > -2.0) {
+				polywomanDX = -2.0;
+				frame = 3;
+			}
+			break;
+		case 3: //polyman flips
+			thetaPolyman -= 5.0;
+			if (thetaPolyman <= -360.0) {
+				frame = 4;
+				thetaPolyman = 0.0;
+
+			}
+			break;
+		case 4: //polywoman rocks forth
+
+			thetaPolywoman += 2.0;
+			if (thetaPolywoman >= 45.0) {
+				frame = 5;
+
+			}
+			
+			break;
+		case 5: //polywoman rocks back
+			thetaPolywoman -= 2.0;
+			if (thetaPolywoman <= -45.0) {
+				frame = 6;
+				thetaPolywoman = 0.0;
+			} 
+			break;
+		case 6://squareman enters and kills polyman
+			squaremanDX += .15;
+
+				if (squaremanDX > -2.75) {
+					squaremanDX = -2.75;
+					frame = 7;
+				}
+			break;
+
+		case 7:// polyman dies
+			
+			thetaPolyman -= 5.0;
+			polymanDY -= .03;
+			if (thetaPolyman <= -180.0) {
+				thetaPolyman = -180.0;
+				polymanDY = -4.0;
+				frame = 8;
+			}
+			break;
+		case 8:
+			squaremanDX -= .5;
+			if (squaremanDX <= -10.0) {
+				frame = 9;
+				squaremanDX = -10.0;
+					
+			}
+
+			break;
+		case 9:
+			polywomanDX -= .5;
+			if (polywomanDX <= -10.0) {
+				polywomanDX = -10.0;
+
+			}
+			break;
+
+
+		}
+		//redraw the scene with new coordinates
+	}
+	//redraw scene with current co-ords if not paused
+	if (!paused) {
+		glutPostRedisplay();
+	}
+	glutTimerFunc(30, TimerFunction, 1);
+
+}
+//-------------------------------------------------------------------------
+//  Keys
+//	Utility function to handle glutkeybordFunc and triggered
+//	when keyboard keys are pressed, assigns actions to keybaord keys
+//-------------------------------------------------------------------------
+void Keys(unsigned char key, int mouseX, int mouseY) {
+	switch (key) {
+		//key pressed was spacebar, toggle pause
+	case ' ':
+		// pause if not paused
+		if (!paused) {
+			paused = true;
+		}
+		// unpause if paused
+		else {
+			paused = false;
+		}
+		break;
+	}
+}
